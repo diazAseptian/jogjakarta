@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Semangat Ujiannya, Sayangku! 💖</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+      * {
+        font-family: 'Poppins', sans-serif;
+      }
+      
+      @keyframes bounce {
+        0%, 20%, 53%, 80%, 100% { transform: translateY(0); }
+        40%, 43% { transform: translateY(-10px); }
+        70% { transform: translateY(-5px); }
+      }
+      
+      @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+      }
+      
+      @keyframes slide-in-from-bottom {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      
+      @keyframes fade-in {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      
+      @keyframes animate-in {
+        from { opacity: 0; transform: translateY(20px) scale(0.95); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
+      }
+      
+      .animate-bounce { animation: bounce 2s infinite; }
+      .animate-pulse { animation: pulse 2s infinite; }
+      .animate-in { animation: animate-in 0.3s ease-out; }
+      .slide-in-from-bottom { animation: slide-in-from-bottom 1s ease-out; }
+      .fade-in { animation: fade-in 1s ease-out; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
