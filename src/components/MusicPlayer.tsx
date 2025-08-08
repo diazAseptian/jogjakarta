@@ -64,7 +64,7 @@ const MusicPlayer: React.FC = () => {
   return (
     <div className="bg-white/90 backdrop-blur-sm rounded-2xl p-6 shadow-lg border border-blue-100">
       <div className="text-center mb-6">
-        <h3 className="text-xl font-bold text-gray-800 mb-2">🎵 Musik Semangat</h3>
+        <h3 className="text-xl font-bold text-gray-800 mb-2">🎵 Play Musik nya dulu yaa</h3>
         <p className="text-sm text-gray-600">Dengarkan sambil belajar, sayang!</p>
       </div>
 

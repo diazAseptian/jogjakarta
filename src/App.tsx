@@ -53,6 +53,13 @@ function App() {
             <p className="text-xl md:text-2xl text-gray-700 mb-8 leading-relaxed max-w-2xl mx-auto">
               You've got this, my love. Don't be afraid — you're not alone, I'm always here for you.
             </p>
+            
+      {/* Music Player Section */}
+      <section className="py-16 px-4 bg-gradient-to-r from-blue-100/50 to-purple-100/50">
+        <div className="max-w-md mx-auto">
+          <MusicPlayer />
+        </div>
+      </section>
 
             <div className="flex flex-wrap justify-center gap-4">
               <button
@@ -71,6 +78,7 @@ function App() {
           </div>
         </div>
       </section>
+
 
       {/* Countdown Section */}
       <section className="py-16 px-4">
@@ -99,12 +107,7 @@ function App() {
         </div>
       </section>
 
-      {/* Music Player Section */}
-      <section className="py-16 px-4 bg-gradient-to-r from-blue-100/50 to-purple-100/50">
-        <div className="max-w-md mx-auto">
-          <MusicPlayer />
-        </div>
-      </section>
+
 
       {/* Final Motivation Section */}
       <section className="py-16 px-4">
