@@ -6,24 +6,24 @@ const QuotesSection: React.FC = () => {
 
   const quotes = [
     {
-      text: "Kamu pasti bisa, cintaku! Aku percaya pada kemampuanmu yang luar biasa ✨",
+      text: "Kerja kerasmu hari ini adalah fondasi kesuksesanmu esok hari. Terus semangat! 🔥",
+      author: "Dari yang selalu mendukungmu"
+    },
+    {
+      text: "Setiap tugas yang kamu selesaikan adalah bukti betapa hebatnya kamu 💼",
+      author: "Dengan bangga dan cinta"
+    },
+    {
+      text: "Ketika lelah menyapa, ingatlah betapa jauh kamu sudah melangkah 💪",
       author: "Dari hati yang paling dalam"
     },
     {
-      text: "Setiap usaha yang kamu lakukan hari ini akan membawa hasil yang manis besok 🌟",
-      author: "Motivasi dari pacarmu"
-    },
-    {
-      text: "Ketika kamu merasa lelah, ingatlah bahwa aku selalu di sini mendukungmu 💪",
-      author: "Dengan cinta tanpa batas"
-    },
-    {
-      text: "Ujian ini hanya sementara, tapi kebanggaanku padamu akan selamanya 🏆",
-      author: "Pacarmu yang paling sayang"
-    },
-    {
-      text: "Kamu bukan hanya cantik, tapi juga cerdas dan kuat. Buktikan itu! 👑",
+      text: "Produktivitasmu hari ini mencerminkan betapa luar biasanya dirimu 🏆",
       author: "Yang selalu percaya padamu"
+    },
+    {
+      text: "Tidak ada kerja keras yang sia-sia. Semuanya akan terbayar lunas! ⭐",
+      author: "Pacarmu yang paling sayang"
     }
   ];
 
@@ -36,10 +36,10 @@ const QuotesSection: React.FC = () => {
   }, [quotes.length]);
 
   return (
-    <div className="bg-gradient-to-br from-pink-100/80 via-purple-100/80 to-blue-100/80 backdrop-blur-sm rounded-2xl p-8 shadow-lg border border-pink-200">
+    <div className="bg-gradient-to-br from-yellow-100/80 via-orange-100/80 to-red-100/80 backdrop-blur-sm rounded-2xl p-8 shadow-lg border border-orange-200">
       <div className="text-center mb-8">
-        <Quote className="w-12 h-12 text-pink-500 mx-auto mb-4" />
-        <h3 className="text-2xl font-bold text-gray-800">Kata-kata Semangat</h3>
+        <Quote className="w-12 h-12 text-orange-500 mx-auto mb-4" />
+        <h3 className="text-2xl font-bold text-gray-800">Kata-kata Semangat Kerja</h3>
         <p className="text-gray-600 mt-2">Khusus untukmu, sayangku</p>
       </div>
 
@@ -51,7 +51,7 @@ const QuotesSection: React.FC = () => {
           <blockquote className="text-lg md:text-xl text-gray-800 font-medium leading-relaxed mb-4 italic">
             "{quotes[currentQuote].text}"
           </blockquote>
-          <cite className="text-pink-600 font-semibold">
+          <cite className="text-orange-600 font-semibold">
             — {quotes[currentQuote].author}
           </cite>
         </div>
@@ -64,8 +64,8 @@ const QuotesSection: React.FC = () => {
             onClick={() => setCurrentQuote(index)}
             className={`w-3 h-3 rounded-full transition-all duration-300 ${
               currentQuote === index
-                ? 'bg-pink-500 shadow-lg scale-110'
-                : 'bg-pink-200 hover:bg-pink-300'
+                ? 'bg-orange-500 shadow-lg scale-110'
+                : 'bg-orange-200 hover:bg-orange-300'
             }`}
           />
         ))}
