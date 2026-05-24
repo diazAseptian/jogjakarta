@@ -42,12 +42,57 @@ export interface SiteSettings {
   headerImage: string;
 }
 
+export interface LandingFeature {
+  id: string;
+  icon: string;
+  title: string;
+  desc: string;
+}
+
+export interface LandingContent {
+  brandName: string;
+  tagline: string;
+  heroTitle: string;
+  heroSubtitle: string;
+  heroImage: string;
+  aboutTitle: string;
+  aboutDesc: string;
+  aboutImage: string;
+  features: LandingFeature[];
+  ctaText: string;
+  ctaSubText: string;
+  showLanding: boolean;
+  navLogo: string;
+}
+
 export interface ItineraryData {
   tripInfo: TripInfo;
   days: DayPlan[];
   tips: TipItem[];
   settings: SiteSettings;
+  landing: LandingContent;
 }
+
+export const defaultLanding: LandingContent = {
+  brandName: 'Road To Jogjakarta',
+  tagline: '✨ Platform Perencanaan Wisata Terbaik',
+  heroTitle: 'Rencanakan Perjalanan Jogja Impianmu',
+  heroSubtitle: 'Buat itinerary, kelola budget, dan nikmati liburan ke Yogyakarta bersama teman & keluarga dengan mudah.',
+  heroImage: '',
+  aboutTitle: 'Tentang Road To Jogjakarta',
+  aboutDesc: 'Road To Jogjakarta adalah platform digital yang membantu kamu merencanakan perjalanan wisata ke Yogyakarta. Dari itinerary harian, manajemen budget, hingga rekomendasi tempat wisata terbaik — semua ada di sini.',
+  aboutImage: '',
+  navLogo: '',
+  features: [
+    { id: '1', icon: '🗺️', title: 'Itinerary Lengkap', desc: 'Buat jadwal perjalanan harian yang terstruktur dan mudah diikuti.' },
+    { id: '2', icon: '💰', title: 'Kelola Budget', desc: 'Pantau pengeluaran dan bagi biaya bersama anggota trip.' },
+    { id: '3', icon: '👥', title: 'Trip Bersama', desc: 'Undang teman dan keluarga untuk merencanakan trip bersama.' },
+    { id: '4', icon: '📍', title: 'Rekomendasi Wisata', desc: 'Temukan destinasi terbaik di Yogyakarta dengan panduan lengkap.' },
+  ],
+  ctaText: 'Mulai Rencanakan Tripmu Sekarang!',
+  ctaSubText: 'Gratis untuk semua pengguna. Daftar sekarang dan mulai petualanganmu.',
+  showLanding: true,
+};
 
 const DOC_REF = () => doc(db, 'itinerary', 'main');
 
@@ -76,6 +121,7 @@ export const defaultData: ItineraryData = {
     adminPassword: 'jogja2025',
     headerImage: '',
   },
+  landing: defaultLanding,
 };
 
 export const loadItinerary = async (): Promise<ItineraryData> => {
@@ -88,6 +134,7 @@ export const loadItinerary = async (): Promise<ItineraryData> => {
       ...parsed,
       settings: { ...defaultData.settings, ...parsed.settings },
       tripInfo: { ...defaultData.tripInfo, ...parsed.tripInfo },
+      landing: { ...defaultLanding, ...parsed.landing, features: parsed.landing?.features ?? defaultLanding.features },
     };
   } catch {
     return defaultData;
@@ -112,6 +159,7 @@ export const subscribeItinerary = (callback: (data: ItineraryData) => void): (()
       tripInfo: { ...defaultData.tripInfo, ...parsed.tripInfo },
       days: parsed.days ?? defaultData.days,
       tips: parsed.tips ?? defaultData.tips,
+      landing: { ...defaultLanding, ...parsed.landing, features: parsed.landing?.features ?? defaultLanding.features },
     });
   }, (error) => {
     console.error('[Firestore] subscribeItinerary error:', error.code, error.message);
