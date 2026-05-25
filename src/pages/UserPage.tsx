@@ -244,6 +244,10 @@ export default function UserPage() {
                   <div className="w-10 h-10 mx-auto border-4 border-teal-500 border-t-transparent rounded-full animate-spin" />
                   <p className="mt-4">Memuat rekomendasi...</p>
                 </div>
+              ) : publicError ? (
+                <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-sm text-red-600">
+                  ⚠️ {publicError}
+                </div>
               ) : publicTrips.length === 0 ? (
                 <div className="bg-white rounded-2xl border border-dashed border-gray-300 p-10 text-center text-gray-400">
                   <p className="text-4xl mb-3">✨</p>

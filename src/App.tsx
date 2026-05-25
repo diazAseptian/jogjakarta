@@ -25,7 +25,11 @@ function App() {
               <UserPage />
             </ProtectedRoute>
           } />
-          <Route path="/recommendations" element={<RecommendationsPage />} />
+          <Route path="/recommendations" element={
+            <ProtectedRoute>
+              <RecommendationsPage />
+            </ProtectedRoute>
+          } />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>

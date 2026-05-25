@@ -76,32 +76,28 @@ export function usePublicTrips(excludeUid?: string) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!excludeUid) return; // tunggu uid tersedia dulu
     const q = query(collection(db, 'trips'), where('isPublic', '==', true));
     const unsubscribe = onSnapshot(
       q,
       snap => {
-        try {
-          const visible = snap.docs
-            .map(d => ({ id: d.id, ...d.data() } as Trip))
-            .filter(t => !excludeUid || t.ownerId !== excludeUid)
-            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-          setTrips(visible);
-          setError(null);
-          setLoading(false);
-        } catch (err) {
-          console.error('Error processing public trips:', err);
-          setError('Gagal memuat rekomendasi');
-          setLoading(false);
-        }
+        const visible = snap.docs
+          .map(d => ({ id: d.id, ...d.data() } as Trip))
+          .filter(t => t.ownerId !== excludeUid)
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setTrips(visible);
+        setError(null);
+        setLoading(false);
       },
       err => {
-        console.error('Firestore snapshot error:', err);
-        setError('Permission denied - tidak bisa membaca rekomendasi');
+        console.error('usePublicTrips error:', err.code, err.message);
+        setError(err.code === 'permission-denied'
+          ? 'Akses ditolak. Periksa Firestore Rules.'
+          : 'Gagal memuat rekomendasi.');
         setTrips([]);
         setLoading(false);
       }
     );
-
     return unsubscribe;
   }, [excludeUid]);
 
