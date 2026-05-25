@@ -77,6 +77,9 @@ export interface Trip {
   budget: BudgetItem[];
   expenses: Expense[];
   isPublic: boolean;
+  isPublicItinerary?: boolean;
+  isPublicBudget?: boolean;
+  isPublicPacking?: boolean;
   isFeatured: boolean;
   coverImage?: string;
   createdAt: string;

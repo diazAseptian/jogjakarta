@@ -1,29 +1,33 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LogOut, Menu, LayoutDashboard, MapPin, Wallet, ChevronDown, ChevronUp, CalendarDays, ShoppingBag } from 'lucide-react';
+import { LogOut, Menu, LayoutDashboard, MapPin, Wallet, ChevronDown, ChevronUp, CalendarDays, ShoppingBag, Sparkles } from 'lucide-react';
 import { signOut } from 'firebase/auth';
 import { auth } from '../lib/firebase';
 import { useAuth } from '../context/AuthContext';
-import { useUserTrips, createTrip, updateTrip, deleteTrip } from '../hooks/useTrips';
+import { useUserTrips, usePublicTrips, createTrip, updateTrip, deleteTrip } from '../hooks/useTrips';
 import DashboardTab from './user/DashboardTab';
 import TripFormModal from './user/TripFormModal';
 import BudgetTab from './user/BudgetTab';
 import ItineraryTab from './user/ItineraryTab';
 import PackingTab from './user/PackingTab';
+import ReadOnlyTripModal from '../components/ReadOnlyTripModal';
 import { Trip } from '../types';
 
-type Tab = 'dashboard' | 'trips' | 'itinerary' | 'budget' | 'packing';
+type Tab = 'dashboard' | 'trips' | 'recommendations' | 'itinerary' | 'budget' | 'packing';
 type TripSubTab = 'detail' | 'itinerary' | 'budget' | 'packing';
 
 export default function UserPage() {
   const navigate = useNavigate();
   const { user, profile } = useAuth();
   const { trips, loading } = useUserTrips(user?.uid ?? '');
+  const { trips: publicTrips, loading: publicLoading, error: publicError } = usePublicTrips(user?.uid ?? '');
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editTrip, setEditTrip] = useState<Trip | null>(null);
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
+  const [selectedPublicTrip, setSelectedPublicTrip] = useState<Trip | null>(null);
+  const [publicModalOpen, setPublicModalOpen] = useState(false);
   const [tripSubTab, setTripSubTab] = useState<TripSubTab>('detail');
 
   const logout = async () => { await signOut(auth); navigate('/auth'); };
@@ -59,6 +63,7 @@ export default function UserPage() {
   const navItems: { tab: Tab; icon: React.ReactNode; label: string }[] = [
     { tab: 'dashboard', icon: <LayoutDashboard className="w-5 h-5" />, label: 'Dashboard' },
     { tab: 'trips', icon: <MapPin className="w-5 h-5" />, label: 'Trip Saya' },
+    { tab: 'recommendations', icon: <Sparkles className="w-5 h-5" />, label: 'Rekomendasi' },
     { tab: 'itinerary', icon: <CalendarDays className="w-5 h-5" />, label: 'Itinerary' },
     { tab: 'budget', icon: <Wallet className="w-5 h-5" />, label: 'Budget' },
     { tab: 'packing', icon: <ShoppingBag className="w-5 h-5" />, label: 'Packing List' },
@@ -131,6 +136,11 @@ export default function UserPage() {
                         <p className="font-medium text-gray-700 mt-0.5">{item.value}</p>
                       </div>
                     ))}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <span className={`text-xs px-2 py-1 rounded-full ${liveTrip.isPublicItinerary ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>{liveTrip.isPublicItinerary ? 'Itinerary Publik' : 'Itinerary Private'}</span>
+                    <span className={`text-xs px-2 py-1 rounded-full ${liveTrip.isPublicBudget ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>{liveTrip.isPublicBudget ? 'Budget Publik' : 'Budget Private'}</span>
+                    <span className={`text-xs px-2 py-1 rounded-full ${liveTrip.isPublicPacking ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'}`}>{liveTrip.isPublicPacking ? 'Packing Publik' : 'Packing Private'}</span>
                   </div>
                   {liveTrip.description && (
                     <div className="bg-white rounded-xl p-3 text-sm text-gray-600">{liveTrip.description}</div>
@@ -217,6 +227,52 @@ export default function UserPage() {
                 </div>
               ) : (
                 trips.map(trip => <TripCard key={trip.id} trip={trip} />)
+              )}
+            </div>
+          )}
+
+          {/* RECOMMENDATIONS */}
+          {activeTab === 'recommendations' && (
+            <div className="max-w-3xl mx-auto space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-gray-500">Trip publik dari user lain</p>
+                <span className="text-xs text-gray-400">{publicLoading ? 'Memuat...' : `${publicTrips.length} rekomendasi`}</span>
+              </div>
+
+              {publicLoading ? (
+                <div className="bg-white rounded-2xl border border-gray-100 p-10 text-center text-gray-400">
+                  <div className="w-10 h-10 mx-auto border-4 border-teal-500 border-t-transparent rounded-full animate-spin" />
+                  <p className="mt-4">Memuat rekomendasi...</p>
+                </div>
+              ) : publicTrips.length === 0 ? (
+                <div className="bg-white rounded-2xl border border-dashed border-gray-300 p-10 text-center text-gray-400">
+                  <p className="text-4xl mb-3">✨</p>
+                  <p className="font-medium">Belum ada trip publik dari user lain</p>
+                  <p className="text-sm text-gray-500 mt-2">Minta temanmu untuk bagikan itinerary, budget, atau packing publik.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 gap-3">
+                  {publicTrips.map(trip => (
+                    <div key={trip.id} className="bg-white rounded-2xl p-4 border shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
+                      <div>
+                        <p className="font-semibold text-gray-800">{trip.name}</p>
+                        <p className="text-xs text-gray-500">{trip.location}</p>
+                        <div className="flex flex-wrap gap-2 mt-2 text-xs">
+                          {trip.isPublicItinerary && <span className="px-2 py-1 rounded-full bg-emerald-100 text-emerald-700">Itinerary Publik</span>}
+                          {trip.isPublicBudget && <span className="px-2 py-1 rounded-full bg-emerald-100 text-emerald-700">Budget Publik</span>}
+                          {trip.isPublicPacking && <span className="px-2 py-1 rounded-full bg-emerald-100 text-emerald-700">Packing Publik</span>}
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        <button onClick={() => { setSelectedPublicTrip(trip); setPublicModalOpen(true); }}
+                          className="px-3 py-1 rounded-xl bg-teal-500 text-white text-xs font-semibold">
+                          Lihat
+                        </button>
+                        <p className="text-xs text-gray-500">{(trip.budget || []).length} RAB · {(trip.days || []).length} hari · {((trip as any).packing || []).length} barang</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           )}
@@ -348,6 +404,10 @@ export default function UserPage() {
           onClose={() => { setShowForm(false); setEditTrip(null); }}
           onSave={editTrip ? handleUpdate : handleCreate}
         />
+      )}
+
+      {publicModalOpen && selectedPublicTrip && (
+        <ReadOnlyTripModal trip={selectedPublicTrip} onClose={() => { setPublicModalOpen(false); setSelectedPublicTrip(null); }} />
       )}
     </div>
   );

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import {
-  collection, doc, addDoc, updateDoc, deleteDoc,
+  collection, doc, addDoc, updateDoc, deleteDoc, getDoc,
   onSnapshot, query, where,
 } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
@@ -30,6 +30,7 @@ export function useUserTrips(uid: string) {
 }
 
 export async function createTrip(uid: string, email: string, displayName: string, data: Partial<Trip>): Promise<string> {
+  const isPublic = (data as any).isPublicItinerary || (data as any).isPublicBudget || (data as any).isPublicPacking;
   const ref = await addDoc(collection(db, 'trips'), {
     ...data,
     ownerId: uid,
@@ -37,7 +38,10 @@ export async function createTrip(uid: string, email: string, displayName: string
     days: [],
     budget: [],
     expenses: [],
-    isPublic: false,
+    isPublic: isPublic || false,
+    isPublicItinerary: (data as any).isPublicItinerary ?? false,
+    isPublicBudget: (data as any).isPublicBudget ?? false,
+    isPublicPacking: (data as any).isPublicPacking ?? false,
     isFeatured: false,
     createdAt: new Date().toISOString(),
   });
@@ -45,11 +49,63 @@ export async function createTrip(uid: string, email: string, displayName: string
 }
 
 export async function updateTrip(tripId: string, data: Partial<Trip>) {
-  await updateDoc(doc(db, 'trips', tripId), data as any);
+  const updateData = { ...data } as any;
+  // Auto-update isPublic if any section is changed to public
+  if ('isPublicItinerary' in updateData || 'isPublicBudget' in updateData || 'isPublicPacking' in updateData) {
+    // Get current values from the doc
+    const docSnap = await getDoc(doc(db, 'trips', tripId));
+    if (docSnap.exists()) {
+      const current = docSnap.data();
+      const newIsPublic = 
+        (updateData.isPublicItinerary ?? current.isPublicItinerary) ||
+        (updateData.isPublicBudget ?? current.isPublicBudget) ||
+        (updateData.isPublicPacking ?? current.isPublicPacking);
+      updateData.isPublic = newIsPublic;
+    }
+  }
+  await updateDoc(doc(db, 'trips', tripId), updateData as any);
 }
 
 export async function deleteTrip(tripId: string) {
   await deleteDoc(doc(db, 'trips', tripId));
+}
+
+export function usePublicTrips(excludeUid?: string) {
+  const [trips, setTrips] = useState<Trip[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const q = query(collection(db, 'trips'), where('isPublic', '==', true));
+    const unsubscribe = onSnapshot(
+      q,
+      snap => {
+        try {
+          const visible = snap.docs
+            .map(d => ({ id: d.id, ...d.data() } as Trip))
+            .filter(t => !excludeUid || t.ownerId !== excludeUid)
+            .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          setTrips(visible);
+          setError(null);
+          setLoading(false);
+        } catch (err) {
+          console.error('Error processing public trips:', err);
+          setError('Gagal memuat rekomendasi');
+          setLoading(false);
+        }
+      },
+      err => {
+        console.error('Firestore snapshot error:', err);
+        setError('Permission denied - tidak bisa membaca rekomendasi');
+        setTrips([]);
+        setLoading(false);
+      }
+    );
+
+    return unsubscribe;
+  }, [excludeUid]);
+
+  return { trips, loading, error };
 }
 
 // ── WISHLIST ───────────────────────────────────────────────────────────────
