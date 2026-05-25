@@ -47,6 +47,8 @@ export interface BudgetItem {
   amount: number;
   paidBy: string;
   splitWith: string[];
+  source?: string; // sumber/asal dana
+  storage?: 'cash' | 'saldo'; // disimpan di mana: cash atau saldo
 }
 
 export interface Expense {
@@ -57,6 +59,8 @@ export interface Expense {
   paidBy: string;
   proofUrl?: string;
   createdAt: string;
+  source?: string;
+  storage?: 'cash' | 'saldo';
 }
 
 export interface Trip {

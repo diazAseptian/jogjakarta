@@ -6,6 +6,7 @@ import LandingPage from './pages/LandingPage';
 import AuthPage from './pages/AuthPage';
 import AdminPage from './pages/AdminPage';
 import UserPage from './pages/UserPage';
+import RecommendationsPage from './pages/RecommendationsPage';
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
               <UserPage />
             </ProtectedRoute>
           } />
+          <Route path="/recommendations" element={<RecommendationsPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>

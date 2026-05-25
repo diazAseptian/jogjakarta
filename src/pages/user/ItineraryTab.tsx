@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Plus, Trash2, ChevronDown, ChevronUp, Check } from 'lucide-react';
 import { Trip, TripDay, TripActivity, ChecklistItem } from '../../types';
 import { updateTrip } from '../../hooks/useTrips';
+import ConfirmModal from '../../components/ConfirmModal';
 
 const genId = () => Math.random().toString(36).slice(2, 9);
 
@@ -12,6 +13,8 @@ export default function ItineraryTab({ trip }: Props) {
   const [expandedAct, setExpandedAct] = useState<string | null>(null);
   const [showActForm, setShowActForm] = useState<string | null>(null); // dayId
   const [actForm, setActForm] = useState({ time: '', place: '', transport: '', notes: '' });
+  const [editingAct, setEditingAct] = useState<{ dayId: string; actId: string } | null>(null);
+  const [editForm, setEditForm] = useState({ time: '', place: '', transport: '', notes: '' });
   const [newCheckText, setNewCheckText] = useState<Record<string, string>>({});
 
   const days: TripDay[] = trip.days ?? [];
@@ -26,7 +29,11 @@ export default function ItineraryTab({ trip }: Props) {
     setExpandedDay(day.id);
   };
 
-  const removeDay = (id: string) => save(days.filter(d => d.id !== id));
+  const removeDay = (id: string) => {
+    if (!confirmState.open) {
+      setConfirmState({ open: true, title: 'Hapus Hari', message: 'Yakin ingin menghapus hari ini? Aksi ini tidak bisa dibatalkan.', onConfirm: () => { save(days.filter(d => d.id !== id)); setConfirmState(s => ({ ...s, open: false })); } });
+    }
+  };
 
   const updateDayDate = (id: string, date: string) =>
     save(days.map(d => d.id === id ? { ...d, date } : d));
@@ -42,8 +49,29 @@ export default function ItineraryTab({ trip }: Props) {
     setExpandedAct(act.id);
   };
 
-  const removeActivity = (dayId: string, actId: string) =>
-    save(days.map(d => d.id === dayId ? { ...d, activities: d.activities.filter(a => a.id !== actId) } : d));
+  const removeActivity = (dayId: string, actId: string) => {
+    if (!confirmState.open) {
+      setConfirmState({ open: true, title: 'Hapus Aktivitas', message: 'Yakin ingin menghapus aktivitas ini?', onConfirm: () => { save(days.map(d => d.id === dayId ? { ...d, activities: d.activities.filter(a => a.id !== actId) } : d)); setConfirmState(s => ({ ...s, open: false })); } });
+    }
+  };
+
+  const startEditActivity = (dayId: string, act: TripActivity) => {
+    setEditingAct({ dayId, actId: act.id });
+    setEditForm({ time: act.time, place: act.place, transport: act.transport, notes: act.notes });
+    setExpandedAct(act.id);
+  };
+
+  const saveEditedActivity = () => {
+    if (!editingAct) return;
+    const { dayId, actId } = editingAct;
+    save(days.map(d => d.id === dayId ? {
+      ...d,
+      activities: d.activities.map(a => a.id === actId ? { ...a, ...editForm } : a),
+    } : d));
+    setEditingAct(null);
+  };
+
+  const cancelEdit = () => setEditingAct(null);
 
   const addChecklist = (dayId: string, actId: string) => {
     const text = newCheckText[actId]?.trim();
@@ -65,16 +93,20 @@ export default function ItineraryTab({ trip }: Props) {
       } : a),
     } : d));
 
-  const removeChecklist = (dayId: string, actId: string, itemId: string) =>
-    save(days.map(d => d.id === dayId ? {
-      ...d,
-      activities: d.activities.map(a => a.id === actId ? {
-        ...a, checklist: a.checklist.filter(c => c.id !== itemId),
-      } : a),
-    } : d));
+  const removeChecklist = (dayId: string, actId: string, itemId: string) => {
+    if (!confirmState.open) {
+      setConfirmState({ open: true, title: 'Hapus Checklist', message: 'Hapus item checklist ini?', onConfirm: () => { save(days.map(d => d.id === dayId ? {
+        ...d,
+        activities: d.activities.map(a => a.id === actId ? { ...a, checklist: a.checklist.filter(c => c.id !== itemId) } : a),
+      } : d)); setConfirmState(s => ({ ...s, open: false })); } });
+    }
+  };
+
+  const [confirmState, setConfirmState] = useState<{ open: boolean; title?: string; message: string; onConfirm?: () => void }>({ open: false, message: '' });
 
   return (
-    <div className="space-y-3">
+    <>
+      <div className="space-y-3">
       <div className="flex items-center justify-between">
         <p className="text-sm text-gray-500">{days.length} hari</p>
         <button onClick={addDay} className="flex items-center gap-1 bg-teal-500 hover:bg-teal-600 text-white px-3 py-1.5 rounded-xl text-xs font-semibold transition-colors">
@@ -141,11 +173,37 @@ export default function ItineraryTab({ trip }: Props) {
                       <button onClick={e => { e.stopPropagation(); removeActivity(day.id, act.id); }} className="p-1 text-gray-300 hover:text-red-400">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
+                      <button onClick={e => { e.stopPropagation(); startEditActivity(day.id, act); }} className="ml-1 text-xs text-teal-500 hover:underline px-2 py-1 rounded">
+                        Edit
+                      </button>
                       {expandedAct === act.id ? <ChevronUp className="w-3.5 h-3.5 text-gray-400" /> : <ChevronDown className="w-3.5 h-3.5 text-gray-400" />}
                     </div>
 
                     {expandedAct === act.id && (
                       <div className="border-t border-gray-100 p-3 space-y-3">
+                        {editingAct?.actId === act.id ? (
+                          <div className="bg-white rounded-xl border border-teal-200 p-3 space-y-2">
+                            <p className="text-xs font-semibold text-gray-600">Edit Aktivitas</p>
+                            <input placeholder="Tempat / Destinasi *" value={editForm.place}
+                              onChange={e => setEditForm(f => ({ ...f, place: e.target.value }))}
+                              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-teal-400" />
+                            <div className="grid grid-cols-2 gap-2">
+                              <input placeholder="Jam (contoh: 08:00)" value={editForm.time}
+                                onChange={e => setEditForm(f => ({ ...f, time: e.target.value }))}
+                                className="border border-gray-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-teal-400" />
+                              <input placeholder="Transport" value={editForm.transport}
+                                onChange={e => setEditForm(f => ({ ...f, transport: e.target.value }))}
+                                className="border border-gray-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-teal-400" />
+                            </div>
+                            <textarea placeholder="Catatan" value={editForm.notes} rows={2}
+                              onChange={e => setEditForm(f => ({ ...f, notes: e.target.value }))}
+                              className="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-teal-400 resize-none" />
+                            <div className="flex gap-2">
+                              <button onClick={() => cancelEdit()} className="flex-1 border border-gray-200 text-gray-500 py-1.5 rounded-lg text-xs hover:bg-gray-50">Batal</button>
+                              <button onClick={() => saveEditedActivity()} className="flex-1 bg-teal-500 text-white py-1.5 rounded-lg text-xs font-semibold hover:bg-teal-600">Simpan</button>
+                            </div>
+                          </div>
+                        ) : null}
                         <div className="grid grid-cols-2 gap-2 text-xs">
                           {act.time && <div className="bg-gray-50 rounded-lg p-2"><span className="text-gray-400">⏰ Jam</span><p className="font-medium text-gray-700 mt-0.5">{act.time}</p></div>}
                           {act.transport && <div className="bg-gray-50 rounded-lg p-2"><span className="text-gray-400">🚗 Transport</span><p className="font-medium text-gray-700 mt-0.5">{act.transport}</p></div>}
@@ -221,6 +279,14 @@ export default function ItineraryTab({ trip }: Props) {
           )}
         </div>
       ))}
-    </div>
+      </div>
+      <ConfirmModal
+        open={confirmState.open}
+        title={confirmState.title}
+        message={confirmState.message}
+        onConfirm={() => confirmState.onConfirm?.()}
+        onCancel={() => setConfirmState(s => ({ ...s, open: false }))}
+      />
+    </>
   );
 }

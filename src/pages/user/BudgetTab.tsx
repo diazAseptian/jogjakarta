@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Plus, Trash2, Pencil } from 'lucide-react';
 import { Trip, BudgetItem, Expense } from '../../types';
 import { updateTrip } from '../../hooks/useTrips';
+import ConfirmModal from '../../components/ConfirmModal';
 
 const CATEGORIES: { value: BudgetItem['category']; label: string; emoji: string }[] = [
   { value: 'transport', label: 'Transport', emoji: '🚗' },
@@ -12,7 +13,7 @@ const CATEGORIES: { value: BudgetItem['category']; label: string; emoji: string 
   { value: 'lainnya', label: 'Lainnya', emoji: '📦' },
 ];
 
-interface IncomeItem { id: string; label: string; amount: number; createdAt: string; }
+interface IncomeItem { id: string; label: string; amount: number; createdAt: string; source?: string; storage?: 'cash' | 'saldo'; }
 const genId = () => Math.random().toString(36).slice(2, 9);
 const fmt = (n: number) => `Rp ${n.toLocaleString('id-ID')}`;
 
@@ -24,17 +25,17 @@ export default function BudgetTab({ trip }: Props) {
   // RAB
   const [showBudgetForm, setShowBudgetForm] = useState(false);
   const [editBudgetId, setEditBudgetId] = useState<string | null>(null);
-  const [budgetForm, setBudgetForm] = useState<Partial<BudgetItem>>({ category: 'transport', label: '', amount: 0 });
+  const [budgetForm, setBudgetForm] = useState<Partial<BudgetItem>>({ category: 'transport', label: '', amount: 0, source: '', storage: 'cash' });
 
   // Pemasukan
   const [showIncomeForm, setShowIncomeForm] = useState(false);
   const [editIncomeId, setEditIncomeId] = useState<string | null>(null);
-  const [incomeForm, setIncomeForm] = useState({ label: '', amount: 0 });
+  const [incomeForm, setIncomeForm] = useState<{ label: string; amount: number; source?: string; storage?: 'cash' | 'saldo' }>({ label: '', amount: 0, source: '', storage: 'cash' });
 
   // Pengeluaran
   const [showExpenseForm, setShowExpenseForm] = useState(false);
   const [editExpenseId, setEditExpenseId] = useState<string | null>(null);
-  const [expenseForm, setExpenseForm] = useState<Partial<Expense>>({ label: '', amount: 0, category: 'lainnya' });
+  const [expenseForm, setExpenseForm] = useState<Partial<Expense>>({ label: '', amount: 0, category: 'lainnya', source: '', storage: 'cash' });
 
   const budget: BudgetItem[] = trip.budget ?? [];
   const expenses: Expense[] = trip.expenses ?? [];
@@ -51,46 +52,54 @@ export default function BudgetTab({ trip }: Props) {
   const saveIncome = (v: IncomeItem[]) => updateTrip(trip.id, { incomeItems: v } as any);
 
   // ── RAB ──
-  const openAddBudget = () => { setEditBudgetId(null); setBudgetForm({ category: 'transport', label: '', amount: 0 }); setShowBudgetForm(true); };
-  const openEditBudget = (item: BudgetItem) => { setEditBudgetId(item.id); setBudgetForm({ category: item.category, label: item.label, amount: item.amount }); setShowBudgetForm(true); };
+  const openAddBudget = () => { setEditBudgetId(null); setBudgetForm({ category: 'transport', label: '', amount: 0, source: '', storage: 'cash' }); setShowBudgetForm(true); };
+  const openEditBudget = (item: BudgetItem) => { setEditBudgetId(item.id); setBudgetForm({ category: item.category, label: item.label, amount: item.amount, source: item.source || '', storage: item.storage || 'cash' }); setShowBudgetForm(true); };
   const saveBudgetItem = async () => {
     if (!budgetForm.label || !budgetForm.amount) return;
     if (editBudgetId) {
       await saveBudget(budget.map(b => b.id === editBudgetId ? { ...b, category: budgetForm.category as BudgetItem['category'], label: budgetForm.label!, amount: Number(budgetForm.amount) } : b));
     } else {
-      await saveBudget([...budget, { id: genId(), category: budgetForm.category as BudgetItem['category'], label: budgetForm.label!, amount: Number(budgetForm.amount), paidBy: '', splitWith: [] }]);
+      await saveBudget([...budget, { id: genId(), category: budgetForm.category as BudgetItem['category'], label: budgetForm.label!, amount: Number(budgetForm.amount), paidBy: '', splitWith: [], source: budgetForm.source || '', storage: (budgetForm.storage as any) || 'cash' }]);
     }
-    setShowBudgetForm(false); setEditBudgetId(null); setBudgetForm({ category: 'transport', label: '', amount: 0 });
+    setShowBudgetForm(false); setEditBudgetId(null); setBudgetForm({ category: 'transport', label: '', amount: 0, source: '', storage: 'cash' });
   };
-  const removeBudgetItem = (id: string) => saveBudget(budget.filter(b => b.id !== id));
+  const removeBudgetItem = (id: string) => {
+    setConfirm({ open: true, title: 'Hapus RAB', message: 'Yakin ingin menghapus item RAB ini?', onConfirm: () => { saveBudget(budget.filter(b => b.id !== id)); setConfirm(c => ({ ...c, open: false })); } });
+  };
 
   // ── PEMASUKAN ──
-  const openAddIncome = () => { setEditIncomeId(null); setIncomeForm({ label: '', amount: 0 }); setShowIncomeForm(true); };
-  const openEditIncome = (item: IncomeItem) => { setEditIncomeId(item.id); setIncomeForm({ label: item.label, amount: item.amount }); setShowIncomeForm(true); };
+  const openAddIncome = () => { setEditIncomeId(null); setIncomeForm({ label: '', amount: 0, source: '', storage: 'cash' }); setShowIncomeForm(true); };
+  const openEditIncome = (item: IncomeItem) => { setEditIncomeId(item.id); setIncomeForm({ label: item.label, amount: item.amount, source: item.source || '', storage: item.storage || 'cash' }); setShowIncomeForm(true); };
   const saveIncomeItem = async () => {
     if (!incomeForm.amount) return;
     if (editIncomeId) {
-      await saveIncome(incomeItems.map(i => i.id === editIncomeId ? { ...i, label: incomeForm.label, amount: Number(incomeForm.amount) } : i));
+      await saveIncome(incomeItems.map(i => i.id === editIncomeId ? { ...i, label: incomeForm.label, amount: Number(incomeForm.amount), source: incomeForm.source || '', storage: incomeForm.storage || 'cash' } : i));
     } else {
-      await saveIncome([...incomeItems, { id: genId(), label: incomeForm.label || 'Pemasukan', amount: Number(incomeForm.amount), createdAt: new Date().toISOString() }]);
+      await saveIncome([...incomeItems, { id: genId(), label: incomeForm.label || 'Pemasukan', amount: Number(incomeForm.amount), createdAt: new Date().toISOString(), source: incomeForm.source || '', storage: incomeForm.storage || 'cash' }]);
     }
-    setShowIncomeForm(false); setEditIncomeId(null); setIncomeForm({ label: '', amount: 0 });
+    setShowIncomeForm(false); setEditIncomeId(null); setIncomeForm({ label: '', amount: 0, source: '', storage: 'cash' });
   };
-  const removeIncome = (id: string) => saveIncome(incomeItems.filter(i => i.id !== id));
+  const removeIncome = (id: string) => {
+    setConfirm({ open: true, title: 'Hapus Pemasukan', message: 'Yakin ingin menghapus pemasukan ini?', onConfirm: () => { saveIncome(incomeItems.filter(i => i.id !== id)); setConfirm(c => ({ ...c, open: false })); } });
+  };
 
   // ── PENGELUARAN ──
-  const openAddExpense = () => { setEditExpenseId(null); setExpenseForm({ label: '', amount: 0, category: 'lainnya' }); setShowExpenseForm(true); };
-  const openEditExpense = (exp: Expense) => { setEditExpenseId(exp.id); setExpenseForm({ label: exp.label, amount: exp.amount, category: exp.category }); setShowExpenseForm(true); };
+  const openAddExpense = () => { setEditExpenseId(null); setExpenseForm({ label: '', amount: 0, category: 'lainnya', source: '', storage: 'cash' }); setShowExpenseForm(true); };
+  const openEditExpense = (exp: Expense) => { setEditExpenseId(exp.id); setExpenseForm({ label: exp.label, amount: exp.amount, category: exp.category, source: exp.source || '', storage: exp.storage || 'cash' }); setShowExpenseForm(true); };
   const saveExpenseItem = async () => {
     if (!expenseForm.label || !expenseForm.amount) return;
     if (editExpenseId) {
-      await saveExpenses(expenses.map(e => e.id === editExpenseId ? { ...e, label: expenseForm.label!, amount: Number(expenseForm.amount), category: expenseForm.category ?? 'lainnya' } : e));
+      await saveExpenses(expenses.map(e => e.id === editExpenseId ? { ...e, label: expenseForm.label!, amount: Number(expenseForm.amount), category: expenseForm.category ?? 'lainnya', source: expenseForm.source || '', storage: expenseForm.storage || 'cash' } : e));
     } else {
-      await saveExpenses([...expenses, { id: genId(), label: expenseForm.label!, amount: Number(expenseForm.amount), category: expenseForm.category ?? 'lainnya', paidBy: '', createdAt: new Date().toISOString() }]);
+      await saveExpenses([...expenses, { id: genId(), label: expenseForm.label!, amount: Number(expenseForm.amount), category: expenseForm.category ?? 'lainnya', paidBy: '', createdAt: new Date().toISOString(), source: expenseForm.source || '', storage: expenseForm.storage || 'cash' }]);
     }
-    setShowExpenseForm(false); setEditExpenseId(null); setExpenseForm({ label: '', amount: 0, category: 'lainnya' });
+    setShowExpenseForm(false); setEditExpenseId(null); setExpenseForm({ label: '', amount: 0, category: 'lainnya', source: '', storage: 'cash' });
   };
-  const removeExpense = (id: string) => saveExpenses(expenses.filter(e => e.id !== id));
+  const removeExpense = (id: string) => {
+    setConfirm({ open: true, title: 'Hapus Pengeluaran', message: 'Yakin ingin menghapus pengeluaran ini?', onConfirm: () => { saveExpenses(expenses.filter(e => e.id !== id)); setConfirm(c => ({ ...c, open: false })); } });
+  };
+
+  const [confirm, setConfirm] = useState<{ open: boolean; title?: string; message: string; onConfirm?: () => void }>({ open: false, message: '' });
 
   const grouped = CATEGORIES.map(cat => ({
     ...cat,
@@ -126,6 +135,13 @@ export default function BudgetTab({ trip }: Props) {
             <div className={`h-2.5 rounded-full transition-all ${totalExpenses > totalIncome ? 'bg-red-500' : 'bg-teal-500'}`}
               style={{ width: `${Math.min((totalExpenses / totalIncome) * 100, 100)}%` }} />
           </div>
+          <ConfirmModal
+            open={confirm.open}
+            title={confirm.title}
+            message={confirm.message}
+            onConfirm={() => confirm.onConfirm?.()}
+            onCancel={() => setConfirm(c => ({ ...c, open: false }))}
+          />
         </div>
       )}
 
@@ -161,8 +177,16 @@ export default function BudgetTab({ trip }: Props) {
               <input type="number" placeholder="Estimasi biaya (Rp)" value={budgetForm.amount || ''}
                 onChange={e => setBudgetForm(f => ({ ...f, amount: Number(e.target.value) }))}
                 className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-teal-400" />
+              <input placeholder="Sumber dana (contoh: Tabungan, Iuran)" value={budgetForm.source}
+                onChange={e => setBudgetForm(f => ({ ...f, source: e.target.value }))}
+                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-teal-400" />
+              <select value={budgetForm.storage} onChange={e => setBudgetForm(f => ({ ...f, storage: e.target.value as any }))}
+                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-teal-400">
+                <option value="cash">Cash</option>
+                <option value="saldo">Saldo</option>
+              </select>
               <div className="flex gap-2">
-                <button onClick={() => { setShowBudgetForm(false); setEditBudgetId(null); }} className="flex-1 border border-gray-200 text-gray-500 py-2 rounded-xl text-sm hover:bg-gray-50">Batal</button>
+                    <button onClick={() => { setShowBudgetForm(false); setEditBudgetId(null); setBudgetForm({ category: 'transport', label: '', amount: 0, source: '', storage: 'cash' }); }} className="flex-1 border border-gray-200 text-gray-500 py-2 rounded-xl text-sm hover:bg-gray-50">Batal</button>
                 <button onClick={saveBudgetItem} className="flex-1 bg-teal-500 text-white py-2 rounded-xl text-sm font-semibold hover:bg-teal-600">Simpan</button>
               </div>
             </div>
@@ -182,10 +206,16 @@ export default function BudgetTab({ trip }: Props) {
               </div>
               {cat.items.map(item => (
                 <div key={item.id} className="flex items-center px-4 py-3 border-b border-gray-50 last:border-0 gap-2">
-                  <p className="text-sm text-gray-700 flex-1">{item.label}</p>
-                  <p className="text-sm font-medium text-gray-800 shrink-0">{fmt(item.amount)}</p>
-                  <button onClick={() => openEditBudget(item)} className="p-1 text-gray-300 hover:text-teal-500"><Pencil className="w-3.5 h-3.5" /></button>
-                  <button onClick={() => removeBudgetItem(item.id)} className="p-1 text-gray-300 hover:text-red-400"><Trash2 className="w-3.5 h-3.5" /></button>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-gray-700 truncate">{item.label}</p>
+                    <p className="text-xs text-gray-400 mt-1">{item.source ?? ''}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium text-gray-800 shrink-0">{fmt(item.amount)}</span>
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">{item.storage ?? 'cash'}</span>
+                    <button onClick={() => openEditBudget(item)} className="p-1 text-gray-300 hover:text-teal-500"><Pencil className="w-3.5 h-3.5" /></button>
+                    <button onClick={() => removeBudgetItem(item.id)} className="p-1 text-gray-300 hover:text-red-400"><Trash2 className="w-3.5 h-3.5" /></button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -219,8 +249,16 @@ export default function BudgetTab({ trip }: Props) {
               <input type="number" placeholder="Jumlah (Rp)" value={incomeForm.amount || ''}
                 onChange={e => setIncomeForm(f => ({ ...f, amount: Number(e.target.value) }))}
                 className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-green-400" />
+              <input placeholder="Sumber dana (contoh: Tabungan, Sponsor)" value={incomeForm.source}
+                onChange={e => setIncomeForm(f => ({ ...f, source: e.target.value }))}
+                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-green-400" />
+              <select value={incomeForm.storage} onChange={e => setIncomeForm(f => ({ ...f, storage: e.target.value as any }))}
+                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-green-400">
+                <option value="cash">Cash</option>
+                <option value="saldo">Saldo</option>
+              </select>
               <div className="flex gap-2">
-                <button onClick={() => { setShowIncomeForm(false); setEditIncomeId(null); }} className="flex-1 border border-gray-200 text-gray-500 py-2 rounded-xl text-sm hover:bg-gray-50">Batal</button>
+                <button onClick={() => { setShowIncomeForm(false); setEditIncomeId(null); setIncomeForm({ label: '', amount: 0, source: '', storage: 'cash' }); }} className="flex-1 border border-gray-200 text-gray-500 py-2 rounded-xl text-sm hover:bg-gray-50">Batal</button>
                 <button onClick={saveIncomeItem} className="flex-1 bg-green-500 text-white py-2 rounded-xl text-sm font-semibold hover:bg-green-600">Simpan</button>
               </div>
             </div>
@@ -237,7 +275,7 @@ export default function BudgetTab({ trip }: Props) {
               <div className="w-9 h-9 bg-green-50 rounded-xl flex items-center justify-center text-lg shrink-0">💰</div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-800 truncate">{item.label}</p>
-                <p className="text-xs text-gray-400">{new Date(item.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                  <p className="text-xs text-gray-400">{new Date(item.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} · {item.source ?? ''} · <span className="uppercase">{item.storage ?? 'cash'}</span></p>
               </div>
               <p className="text-sm font-bold text-green-600 shrink-0">{fmt(item.amount)}</p>
               <button onClick={() => openEditIncome(item)} className="p-1 text-gray-300 hover:text-teal-500"><Pencil className="w-3.5 h-3.5" /></button>
@@ -294,8 +332,16 @@ export default function BudgetTab({ trip }: Props) {
                 className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-orange-400">
                 {CATEGORIES.map(c => <option key={c.value} value={c.value}>{c.emoji} {c.label}</option>)}
               </select>
+              <input placeholder="Sumber pengeluaran (contoh: Kas, Kartu)" value={expenseForm.source}
+                onChange={e => setExpenseForm(f => ({ ...f, source: e.target.value }))}
+                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-orange-400" />
+              <select value={expenseForm.storage} onChange={e => setExpenseForm(f => ({ ...f, storage: e.target.value as any }))}
+                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm outline-none focus:border-orange-400">
+                <option value="cash">Cash</option>
+                <option value="saldo">Saldo</option>
+              </select>
               <div className="flex gap-2">
-                <button onClick={() => { setShowExpenseForm(false); setEditExpenseId(null); }} className="flex-1 border border-gray-200 text-gray-500 py-2 rounded-xl text-sm hover:bg-gray-50">Batal</button>
+                <button onClick={() => { setShowExpenseForm(false); setEditExpenseId(null); setExpenseForm({ label: '', amount: 0, category: 'lainnya', source: '', storage: 'cash' }); }} className="flex-1 border border-gray-200 text-gray-500 py-2 rounded-xl text-sm hover:bg-gray-50">Batal</button>
                 <button onClick={saveExpenseItem} className="flex-1 bg-orange-500 text-white py-2 rounded-xl text-sm font-semibold hover:bg-orange-600">Simpan</button>
               </div>
             </div>
@@ -312,9 +358,9 @@ export default function BudgetTab({ trip }: Props) {
             return (
               <div key={exp.id} className="bg-white rounded-2xl shadow-sm border border-gray-100 flex items-center gap-3 p-4">
                 <div className="w-9 h-9 bg-orange-50 rounded-xl flex items-center justify-center text-lg shrink-0">{cat?.emoji ?? '📦'}</div>
-                <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-800 truncate">{exp.label}</p>
-                  <p className="text-xs text-gray-400">{cat?.label ?? exp.category} · {new Date(exp.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}</p>
+                  <p className="text-xs text-gray-400">{cat?.label ?? exp.category} · {new Date(exp.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })} · {exp.source ?? ''} · <span className="uppercase">{exp.storage ?? 'cash'}</span></p>
                 </div>
                 <p className="text-sm font-bold text-orange-600 shrink-0">{fmt(exp.amount)}</p>
                 <button onClick={() => openEditExpense(exp)} className="p-1 text-gray-300 hover:text-teal-500"><Pencil className="w-3.5 h-3.5" /></button>
