@@ -1,8 +1,60 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, ChevronDown, ChevronUp, Check } from 'lucide-react';
+import { Plus, Trash2, ChevronDown, ChevronUp, Check, Eye, X } from 'lucide-react';
 import { Trip, TripDay, TripActivity, ChecklistItem } from '../../types';
 import { updateTrip } from '../../hooks/useTrips';
 import ConfirmModal from '../../components/ConfirmModal';
+
+function ActivityDetailModal({ act, day, onClose }: { act: TripActivity; day: TripDay; onClose: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className="relative bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl shadow-xl max-h-[85vh] overflow-y-auto">
+        <div className="flex items-center justify-between p-4 border-b border-gray-100">
+          <div>
+            <p className="text-xs text-gray-400">Hari {day.day} {day.date ? `· ${new Date(day.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'long' })}` : ''}</p>
+            <h3 className="font-bold text-gray-800 mt-0.5">{act.place}</h3>
+          </div>
+          <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-xl"><X className="w-5 h-5 text-gray-500" /></button>
+        </div>
+        <div className="p-4 space-y-3">
+          {act.time && (
+            <div className="flex items-start gap-3 bg-gray-50 rounded-xl p-3">
+              <span className="text-lg">⏰</span>
+              <div><p className="text-xs text-gray-400">Jam</p><p className="text-sm font-medium text-gray-800">{act.time}</p></div>
+            </div>
+          )}
+          {act.transport && (
+            <div className="flex items-start gap-3 bg-gray-50 rounded-xl p-3">
+              <span className="text-lg">🚗</span>
+              <div><p className="text-xs text-gray-400">Transport</p><p className="text-sm font-medium text-gray-800">{act.transport}</p></div>
+            </div>
+          )}
+          {act.notes && (
+            <div className="flex items-start gap-3 bg-gray-50 rounded-xl p-3">
+              <span className="text-lg">📝</span>
+              <div><p className="text-xs text-gray-400">Catatan</p><p className="text-sm text-gray-800 leading-relaxed">{act.notes}</p></div>
+            </div>
+          )}
+          {act.checklist.length > 0 && (
+            <div className="bg-gray-50 rounded-xl p-3">
+              <p className="text-xs text-gray-400 mb-2">✅ Checklist ({act.checklist.filter(c => c.done).length}/{act.checklist.length})</p>
+              <div className="space-y-2">
+                {act.checklist.map(c => (
+                  <div key={c.id} className="flex items-center gap-2">
+                    <div className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 ${c.done ? 'bg-teal-500 border-teal-500' : 'border-gray-300'}`}>
+                      {c.done && <Check className="w-2.5 h-2.5 text-white" />}
+                    </div>
+                    <span className={`text-sm ${c.done ? 'line-through text-gray-400' : 'text-gray-700'}`}>{c.text}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const genId = () => Math.random().toString(36).slice(2, 9);
 
@@ -102,6 +154,7 @@ export default function ItineraryTab({ trip }: Props) {
     }
   };
 
+  const [viewAct, setViewAct] = useState<{ act: TripActivity; day: TripDay } | null>(null);
   const [confirmState, setConfirmState] = useState<{ open: boolean; title?: string; message: string; onConfirm?: () => void }>({ open: false, message: '' });
 
   return (
@@ -170,6 +223,9 @@ export default function ItineraryTab({ trip }: Props) {
                           {doneCount}/{act.checklist.length}
                         </span>
                       )}
+                      <button onClick={e => { e.stopPropagation(); setViewAct({ act, day }); }} className="p-1 text-gray-300 hover:text-blue-400">
+                        <Eye className="w-3.5 h-3.5" />
+                      </button>
                       <button onClick={e => { e.stopPropagation(); removeActivity(day.id, act.id); }} className="p-1 text-gray-300 hover:text-red-400">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -287,6 +343,7 @@ export default function ItineraryTab({ trip }: Props) {
         onConfirm={() => confirmState.onConfirm?.()}
         onCancel={() => setConfirmState(s => ({ ...s, open: false }))}
       />
+      {viewAct && <ActivityDetailModal act={viewAct.act} day={viewAct.day} onClose={() => setViewAct(null)} />}
     </>
   );
 }

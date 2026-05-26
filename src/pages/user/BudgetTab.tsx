@@ -1,8 +1,45 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, Pencil } from 'lucide-react';
+import { Plus, Trash2, Pencil, Eye, X } from 'lucide-react';
 import { Trip, BudgetItem, Expense } from '../../types';
 import { updateTrip } from '../../hooks/useTrips';
 import ConfirmModal from '../../components/ConfirmModal';
+
+function BudgetDetailModal({ item, type, onClose }: {
+  item: any; type: 'rab' | 'pemasukan' | 'pengeluaran'; onClose: () => void;
+}) {
+  const icons = { rab: '💳', pemasukan: '💰', pengeluaran: '🧾' };
+  const colors = { rab: 'text-blue-600', pemasukan: 'text-green-600', pengeluaran: 'text-orange-600' };
+  const fmt = (n: number) => `Rp ${n.toLocaleString('id-ID')}`;
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className="relative bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl shadow-xl">
+        <div className="flex items-center justify-between p-4 border-b border-gray-100">
+          <h3 className="font-bold text-gray-800">Detail {type === 'rab' ? 'RAB' : type === 'pemasukan' ? 'Pemasukan' : 'Pengeluaran'}</h3>
+          <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-xl"><X className="w-5 h-5 text-gray-500" /></button>
+        </div>
+        <div className="p-4 space-y-3">
+          <div className="text-center py-3">
+            <span className="text-4xl">{icons[type]}</span>
+            <p className={`text-2xl font-bold mt-2 ${colors[type]}`}>{fmt(item.amount)}</p>
+          </div>
+          {[
+            { label: 'Keterangan', value: item.label },
+            { label: 'Kategori', value: item.category },
+            { label: 'Sumber', value: item.source },
+            { label: 'Penyimpanan', value: item.storage?.toUpperCase() },
+            { label: 'Tanggal', value: item.createdAt ? new Date(item.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : null },
+          ].filter(r => r.value).map(r => (
+            <div key={r.label} className="flex justify-between items-start gap-3 bg-gray-50 rounded-xl px-4 py-3">
+              <span className="text-xs text-gray-400 shrink-0">{r.label}</span>
+              <span className="text-sm font-medium text-gray-800 text-right">{r.value}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const CATEGORIES: { value: BudgetItem['category']; label: string; emoji: string }[] = [
   { value: 'transport', label: 'Transport', emoji: '🚗' },
@@ -57,7 +94,7 @@ export default function BudgetTab({ trip }: Props) {
   const saveBudgetItem = async () => {
     if (!budgetForm.label || !budgetForm.amount) return;
     if (editBudgetId) {
-      await saveBudget(budget.map(b => b.id === editBudgetId ? { ...b, category: budgetForm.category as BudgetItem['category'], label: budgetForm.label!, amount: Number(budgetForm.amount) } : b));
+      await saveBudget(budget.map(b => b.id === editBudgetId ? { ...b, category: budgetForm.category as BudgetItem['category'], label: budgetForm.label!, amount: Number(budgetForm.amount), source: budgetForm.source || '', storage: (budgetForm.storage as any) || 'cash' } : b));
     } else {
       await saveBudget([...budget, { id: genId(), category: budgetForm.category as BudgetItem['category'], label: budgetForm.label!, amount: Number(budgetForm.amount), paidBy: '', splitWith: [], source: budgetForm.source || '', storage: (budgetForm.storage as any) || 'cash' }]);
     }
@@ -100,6 +137,7 @@ export default function BudgetTab({ trip }: Props) {
   };
 
   const [confirm, setConfirm] = useState<{ open: boolean; title?: string; message: string; onConfirm?: () => void }>({ open: false, message: '' });
+  const [viewItem, setViewItem] = useState<{ item: any; type: 'rab' | 'pemasukan' | 'pengeluaran' } | null>(null);
 
   const grouped = CATEGORIES.map(cat => ({
     ...cat,
@@ -108,7 +146,8 @@ export default function BudgetTab({ trip }: Props) {
   })).filter(g => g.items.length > 0);
 
   return (
-    <div className="space-y-4">
+    <>
+      <div className="space-y-4">
       {/* Summary */}
       <div className="grid grid-cols-3 gap-2">
         <div className="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 text-center">
@@ -215,6 +254,7 @@ export default function BudgetTab({ trip }: Props) {
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
                     <span className="text-xs sm:text-sm font-medium text-gray-800">{fmt(item.amount)}</span>
+                    <button onClick={() => setViewItem({ item, type: 'rab' })} className="p-1 text-gray-300 hover:text-blue-400"><Eye className="w-3.5 h-3.5" /></button>
                     <button onClick={() => openEditBudget(item)} className="p-1 text-gray-300 hover:text-teal-500"><Pencil className="w-3.5 h-3.5" /></button>
                     <button onClick={() => removeBudgetItem(item.id)} className="p-1 text-gray-300 hover:text-red-400"><Trash2 className="w-3.5 h-3.5" /></button>
                   </div>
@@ -277,9 +317,10 @@ export default function BudgetTab({ trip }: Props) {
               <div className="w-9 h-9 bg-green-50 rounded-xl flex items-center justify-center text-lg shrink-0">💰</div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-800 truncate">{item.label}</p>
-                  <p className="text-xs text-gray-400">{new Date(item.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} · {item.source ?? ''} · <span className="uppercase">{item.storage ?? 'cash'}</span></p>
+                  <p className="text-xs text-gray-400 truncate">{new Date(item.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })} · {item.source ?? ''}</p>
               </div>
               <p className="text-sm font-bold text-green-600 shrink-0">{fmt(item.amount)}</p>
+              <button onClick={() => setViewItem({ item, type: 'pemasukan' })} className="p-1 text-gray-300 hover:text-blue-400"><Eye className="w-3.5 h-3.5" /></button>
               <button onClick={() => openEditIncome(item)} className="p-1 text-gray-300 hover:text-teal-500"><Pencil className="w-3.5 h-3.5" /></button>
               <button onClick={() => removeIncome(item.id)} className="p-1 text-gray-300 hover:text-red-400"><Trash2 className="w-3.5 h-3.5" /></button>
             </div>
@@ -362,9 +403,10 @@ export default function BudgetTab({ trip }: Props) {
                 <div className="w-9 h-9 bg-orange-50 rounded-xl flex items-center justify-center text-lg shrink-0">{cat?.emoji ?? '📦'}</div>
                   <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-800 truncate">{exp.label}</p>
-                  <p className="text-xs text-gray-400">{cat?.label ?? exp.category} · {new Date(exp.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })} · {exp.source ?? ''} · <span className="uppercase">{exp.storage ?? 'cash'}</span></p>
+                  <p className="text-xs text-gray-400 truncate">{cat?.label ?? exp.category} · {new Date(exp.createdAt).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}</p>
                 </div>
                 <p className="text-sm font-bold text-orange-600 shrink-0">{fmt(exp.amount)}</p>
+                <button onClick={() => setViewItem({ item: exp, type: 'pengeluaran' })} className="p-1 text-gray-300 hover:text-blue-400"><Eye className="w-3.5 h-3.5" /></button>
                 <button onClick={() => openEditExpense(exp)} className="p-1 text-gray-300 hover:text-teal-500"><Pencil className="w-3.5 h-3.5" /></button>
                 <button onClick={() => removeExpense(exp.id)} className="p-1 text-gray-300 hover:text-red-400"><Trash2 className="w-3.5 h-3.5" /></button>
               </div>
@@ -380,5 +422,14 @@ export default function BudgetTab({ trip }: Props) {
         </div>
       )}
     </div>
+      <ConfirmModal
+        open={confirm.open}
+        title={confirm.title}
+        message={confirm.message}
+        onConfirm={() => confirm.onConfirm?.()}
+        onCancel={() => setConfirm(c => ({ ...c, open: false }))}
+      />
+      {viewItem && <BudgetDetailModal item={viewItem.item} type={viewItem.type} onClose={() => setViewItem(null)} />}
+    </>
   );
 }

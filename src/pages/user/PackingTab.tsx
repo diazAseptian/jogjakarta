@@ -1,8 +1,41 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, Check } from 'lucide-react';
+import { Plus, Trash2, Check, Eye, X } from 'lucide-react';
 import { updateTrip } from '../../hooks/useTrips';
 import { Trip } from '../../types';
 import ConfirmModal from '../../components/ConfirmModal';
+
+function PackingDetailModal({ item, onClose }: { item: any; onClose: () => void }) {
+  const cat = PACKING_CATEGORIES.find(c => c.value === item.category);
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
+      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
+      <div className="relative bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl shadow-xl">
+        <div className="flex items-center justify-between p-4 border-b border-gray-100">
+          <h3 className="font-bold text-gray-800">Detail Barang</h3>
+          <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-xl"><X className="w-5 h-5 text-gray-500" /></button>
+        </div>
+        <div className="p-4 space-y-3">
+          <div className="text-center py-3">
+            <span className="text-4xl">{cat?.emoji ?? '🎒'}</span>
+            <p className="text-xl font-bold text-gray-800 mt-2">{item.name}</p>
+            <span className={`inline-block mt-1 text-xs px-3 py-1 rounded-full font-medium ${
+              item.done ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'
+            }`}>{item.done ? '✅ Sudah dipacking' : '⏳ Belum dipacking'}</span>
+          </div>
+          {[
+            { label: 'Kategori', value: cat?.label },
+            { label: 'Jumlah', value: item.qty || null },
+          ].filter(r => r.value).map(r => (
+            <div key={r.label} className="flex justify-between items-center bg-gray-50 rounded-xl px-4 py-3">
+              <span className="text-xs text-gray-400">{r.label}</span>
+              <span className="text-sm font-medium text-gray-800">{r.value}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const genId = () => Math.random().toString(36).slice(2, 9);
 
@@ -68,6 +101,7 @@ export default function PackingTab({ trip }: Props) {
   };
 
   const [confirm, setConfirm] = useState<{ open: boolean; title?: string; message: string; onConfirm?: () => void }>({ open: false, message: '' });
+  const [viewItem, setViewItem] = useState<any | null>(null);
   const resetAll = () => save(items.map(i => ({ ...i, done: false })));
 
   const doneCount = items.filter(i => i.done).length;
@@ -202,6 +236,9 @@ export default function PackingTab({ trip }: Props) {
                   {item.qty && <span className="text-xs text-gray-400 ml-1">({item.qty})</span>}
                 </span>
                 <div className="flex items-center gap-2">
+                  <button onClick={() => setViewItem(item)} className="text-gray-300 hover:text-blue-400 transition-colors">
+                    <Eye className="w-3.5 h-3.5" />
+                  </button>
                   <button onClick={() => startEdit(item)} className="text-xs text-teal-500 hover:underline px-2 py-1 rounded">Edit</button>
                   <button onClick={() => remove(item.id)} className="text-gray-300 hover:text-red-400 transition-colors">
                     <Trash2 className="w-3.5 h-3.5" />
@@ -220,6 +257,7 @@ export default function PackingTab({ trip }: Props) {
         onConfirm={() => confirm.onConfirm?.()}
         onCancel={() => setConfirm(s => ({ ...s, open: false }))}
       />
+      {viewItem && <PackingDetailModal item={viewItem} onClose={() => setViewItem(null)} />}
     </>
   );
 }

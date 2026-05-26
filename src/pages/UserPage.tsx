@@ -163,7 +163,7 @@ export default function UserPage() {
         <div className="fixed inset-0 bg-black/40 z-20 lg:hidden" onClick={() => setSidebarOpen(false)} />
       )}
 
-      <aside className={`fixed top-0 left-0 h-screen w-64 bg-gradient-to-b from-teal-600 to-blue-600 text-white z-30 flex flex-col transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 lg:sticky lg:top-0 lg:z-auto`}>
+      <aside className={`fixed top-0 left-0 h-screen w-64 bg-gradient-to-b from-teal-600 to-blue-600 text-white z-30 flex flex-col transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0`}>
         <div className="p-5 border-b border-white/20">
           <h1 className="font-bold text-lg">🗺️ Trip Planner</h1>
           <p className="text-teal-200 text-xs mt-0.5">Road To Jogjakarta</p>
@@ -186,7 +186,7 @@ export default function UserPage() {
         </div>
       </aside>
 
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 lg:ml-64">
         <header className="bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-3 sticky top-0 z-10 shadow-sm">
           <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2 rounded-lg hover:bg-gray-100">
             <Menu className="w-5 h-5 text-gray-600" />
