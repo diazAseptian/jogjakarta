@@ -110,18 +110,18 @@ export default function BudgetTab({ trip }: Props) {
   return (
     <div className="space-y-4">
       {/* Summary */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-center">
+      <div className="grid grid-cols-3 gap-2">
+        <div className="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 text-center">
           <p className="text-xs text-gray-400 mb-1">Total RAB</p>
-          <p className="font-bold text-blue-600 text-sm">{fmt(totalRAB)}</p>
+          <p className="font-bold text-blue-600 text-xs sm:text-sm truncate">{fmt(totalRAB)}</p>
         </div>
-        <div className="bg-white rounded-2xl p-4 shadow-sm border border-green-100 text-center">
+        <div className="bg-white rounded-2xl p-3 shadow-sm border border-green-100 text-center">
           <p className="text-xs text-gray-400 mb-1">Pemasukan</p>
-          <p className="font-bold text-green-600 text-sm">{fmt(totalIncome)}</p>
+          <p className="font-bold text-green-600 text-xs sm:text-sm truncate">{fmt(totalIncome)}</p>
         </div>
-        <div className={`bg-white rounded-2xl p-4 shadow-sm border text-center ${saldo >= 0 ? 'border-blue-100' : 'border-red-100'}`}>
+        <div className={`bg-white rounded-2xl p-3 shadow-sm border text-center ${saldo >= 0 ? 'border-blue-100' : 'border-red-100'}`}>
           <p className="text-xs text-gray-400 mb-1">Saldo</p>
-          <p className={`font-bold text-sm ${saldo >= 0 ? 'text-blue-600' : 'text-red-500'}`}>{fmt(saldo)}</p>
+          <p className={`font-bold text-xs sm:text-sm truncate ${saldo >= 0 ? 'text-blue-600' : 'text-red-500'}`}>{fmt(saldo)}</p>
         </div>
       </div>
 
@@ -208,11 +208,13 @@ export default function BudgetTab({ trip }: Props) {
                 <div key={item.id} className="flex items-center px-4 py-3 border-b border-gray-50 last:border-0 gap-2">
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-gray-700 truncate">{item.label}</p>
-                    <p className="text-xs text-gray-400 mt-1">{item.source ?? ''}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <p className="text-xs text-gray-400">{item.source ?? ''}</p>
+                      <span className="text-xs px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-500">{item.storage ?? 'cash'}</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium text-gray-800 shrink-0">{fmt(item.amount)}</span>
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-600">{item.storage ?? 'cash'}</span>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span className="text-xs sm:text-sm font-medium text-gray-800">{fmt(item.amount)}</span>
                     <button onClick={() => openEditBudget(item)} className="p-1 text-gray-300 hover:text-teal-500"><Pencil className="w-3.5 h-3.5" /></button>
                     <button onClick={() => removeBudgetItem(item.id)} className="p-1 text-gray-300 hover:text-red-400"><Trash2 className="w-3.5 h-3.5" /></button>
                   </div>

@@ -38,10 +38,10 @@ export default function DashboardTab({ trips, onSelectTrip, onCreateTrip }: Prop
           { label: 'Pengeluaran', value: `Rp ${totalExpenses.toLocaleString('id')}`, icon: '🧾' },
           { label: 'Saldo', value: `Rp ${saldo.toLocaleString('id')}`, icon: saldo >= 0 ? '✅' : '⚠️' },
         ].map(s => (
-          <div key={s.label} className="bg-white rounded-2xl p-4 shadow-sm border border-gray-100 text-center">
-            <div className="text-2xl mb-1">{s.icon}</div>
-            <div className="font-bold text-gray-800 text-sm truncate">{s.value}</div>
-            <div className="text-xs text-gray-400 mt-0.5">{s.label}</div>
+          <div key={s.label} className="bg-white rounded-2xl p-3 shadow-sm border border-gray-100 text-center">
+            <div className="text-xl mb-1">{s.icon}</div>
+            <div className="font-bold text-gray-800 text-xs sm:text-sm truncate">{s.value}</div>
+            <div className="text-xs text-gray-400 mt-0.5 leading-tight">{s.label}</div>
           </div>
         ))}
       </div>

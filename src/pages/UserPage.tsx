@@ -94,9 +94,9 @@ export default function UserPage() {
           <div className="w-10 h-10 bg-teal-100 rounded-xl flex items-center justify-center text-xl shrink-0">🗺️</div>
           <div className="flex-1 min-w-0">
             <p className="font-bold text-gray-800 truncate">{trip.name}</p>
-            <p className="text-xs text-gray-400">📍 {trip.location} · {trip.startDate || '—'}</p>
+            <p className="text-xs text-gray-400 truncate">📍 {trip.location} · {trip.startDate || '—'}</p>
           </div>
-          <div className="flex gap-2 shrink-0">
+          <div className="flex gap-1.5 shrink-0">
             <button onClick={e => { e.stopPropagation(); setEditTrip(trip); }}
               className="text-xs px-2 py-1 rounded-lg bg-gray-100 hover:bg-teal-50 text-gray-600 hover:text-teal-600 transition-colors">
               Edit
@@ -191,10 +191,10 @@ export default function UserPage() {
           <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2 rounded-lg hover:bg-gray-100">
             <Menu className="w-5 h-5 text-gray-600" />
           </button>
-          <h2 className="font-bold text-gray-800">{navItems.find(n => n.tab === activeTab)?.label}</h2>
+          <h2 className="font-bold text-gray-800 truncate">{navItems.find(n => n.tab === activeTab)?.label}</h2>
         </header>
 
-        <main className="flex-1 p-4 md:p-6 overflow-auto">
+        <main className="flex-1 p-3 sm:p-4 md:p-6 overflow-auto min-w-0">
 
           {/* DASHBOARD */}
           {activeTab === 'dashboard' && (
